@@ -99,6 +99,23 @@ export default function CinematicExperience() {
     const turnVideo = turnVideoRef.current;
     let mm;
 
+    /* iOS Safari unlock: React omits the `muted` attribute from rendered
+       HTML, and iOS refuses to decode/paint frames of a scrubbed video until
+       a muted play() runs inside a real user gesture. Without this the films
+       stay invisible on iPhone. Prime both videos on the first touch/click,
+       then hand control straight back to the scrub. */
+    const primeVideos = () => {
+      [video, turnVideo].forEach((v) => {
+        v.muted = true;
+        v.setAttribute('muted', '');
+        v.setAttribute('webkit-playsinline', '');
+        const p = v.play();
+        if (p) p.then(() => v.pause()).catch(() => {});
+      });
+    };
+    window.addEventListener('touchstart', primeVideos, { once: true, passive: true });
+    window.addEventListener('pointerdown', primeVideos, { once: true });
+
     // The turn film starts as preload="metadata"; we pull the full file once
     // the visitor is past the Music chapter. Lives outside matchMedia so a
     // breakpoint change never re-downloads it.
@@ -712,6 +729,8 @@ export default function CinematicExperience() {
     return () => {
       video.removeEventListener('loadedmetadata', build);
       window.removeEventListener('load', refreshOnLoad);
+      window.removeEventListener('touchstart', primeVideos);
+      window.removeEventListener('pointerdown', primeVideos);
       mm && mm.revert();
     };
   }, []);
