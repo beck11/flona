@@ -501,7 +501,8 @@ a {
    edge vignette keeping Flona slightly brighter than her surroundings. */
 .opening__shade {
   position: absolute;
-  inset: 0;
+  inset: -34px; /* overscan: the shade can drift with the parallax without
+                   exposing unshaded strips at the screen edges */
   background:
     linear-gradient(
       to bottom,
@@ -519,14 +520,15 @@ a {
     );
 }
 
-/* Wordmark block sits below her face (she stands upper-center). */
+/* Wordmark block sits below her face (she stands upper-center). Offset via
+   `top` (not transform) so the parallax owns the transform channel. */
 .opening__lines {
   position: relative;
+  top: 11vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.9rem;
-  transform: translateY(11vh);
 }
 
 .opening__maskline {
@@ -1263,7 +1265,7 @@ a {
   }
 
   .opening__lines {
-    transform: translateY(13vh);
+    top: 13vh;
   }
 
   .rail__label {
@@ -1343,7 +1345,7 @@ a {
    panel padding so the pinned scene still breathes in ~350px of height. */
 @media (max-height: 500px) {
   .opening__lines {
-    transform: translateY(6vh);
+    top: 6vh;
   }
 
   .opening__bg img {

@@ -292,8 +292,9 @@ export default function CinematicExperience() {
             )
             .fromTo(
               q('.opening__bg img'),
-              { scale: 1.06 },
-              { scale: 1, duration: 2.4, ease: 'power2.out' },
+              // settles at 1.045, keeping overscan for the parallax drift
+              { scale: 1.09 },
+              { scale: 1.045, duration: 2.4, ease: 'power2.out' },
               0
             )
             .fromTo(
@@ -315,6 +316,47 @@ export default function CinematicExperience() {
             { autoAlpha: 0 },
             { autoAlpha: 1, duration: 0.6, ease: 'none' }
           );
+        }
+
+        /* MOUSE PARALLAX on the intro portrait (fine pointers only): image,
+           shade and wordmark drift at three depths with a faint tilt, so the
+           opening reads as a scene rather than a flat photo. quickTo keeps
+           it a single eased tween per axis — no per-frame allocations. */
+        let parallaxMove;
+        if (
+          !prefersReducedMotion &&
+          window.matchMedia('(hover: hover) and (pointer: fine)').matches
+        ) {
+          const openingEl = opening[0];
+          const bgImg = q('.opening__bg img');
+          const shade = q('.opening__shade');
+          const lines = q('.opening__lines');
+          gsap.set(bgImg, { transformPerspective: 1000 });
+          const p = {
+            ix: gsap.quickTo(bgImg, 'x', { duration: 0.9, ease: 'power3.out' }),
+            iy: gsap.quickTo(bgImg, 'y', { duration: 0.9, ease: 'power3.out' }),
+            irx: gsap.quickTo(bgImg, 'rotationX', { duration: 1.1, ease: 'power3.out' }),
+            iry: gsap.quickTo(bgImg, 'rotationY', { duration: 1.1, ease: 'power3.out' }),
+            sx: gsap.quickTo(shade, 'x', { duration: 1.0, ease: 'power3.out' }),
+            sy: gsap.quickTo(shade, 'y', { duration: 1.0, ease: 'power3.out' }),
+            lx: gsap.quickTo(lines, 'x', { duration: 1.2, ease: 'power3.out' }),
+            ly: gsap.quickTo(lines, 'y', { duration: 1.2, ease: 'power3.out' }),
+          };
+          parallaxMove = (e) => {
+            // idle once the opening has dissolved into the film
+            if (gsap.getProperty(openingEl, 'opacity') < 0.4) return;
+            const nx = e.clientX / window.innerWidth - 0.5;
+            const ny = e.clientY / window.innerHeight - 0.5;
+            p.ix(nx * 26);
+            p.iy(ny * 18);
+            p.iry(nx * 1.6);
+            p.irx(ny * -1.4);
+            p.sx(nx * 14);
+            p.sy(ny * 10);
+            p.lx(nx * -11); // wordmark counter-drifts = depth separation
+            p.ly(ny * -8);
+          };
+          window.addEventListener('mousemove', parallaxMove, { passive: true });
         }
 
         // Fade the scroll cue as soon as the journey starts.
@@ -749,6 +791,7 @@ export default function CinematicExperience() {
         return () => {
           railItems.forEach((el, i) => el.removeEventListener('click', railHandlers[i]));
           if (marqueeTick) gsap.ticker.remove(marqueeTick);
+          if (parallaxMove) window.removeEventListener('mousemove', parallaxMove);
         };
         }
       );
