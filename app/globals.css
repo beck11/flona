@@ -76,7 +76,7 @@ a {
    entire journey, so the whole site reads as one continuous shot.
    The final turn chapter owns roughly the last 280vh of the runway. */
 .track {
-  height: 1500vh; /* About's editorial sequence owns ~330vh of this */
+  height: 2200vh; /* four fullscreen editorial chapters + the turn finale */
   background: var(--black);
 }
 
@@ -608,23 +608,471 @@ a {
   pointer-events: none;
 }
 
-/* ------------------------------------------------------------------ */
-/*  About — full-screen editorial page                                  */
-/* ------------------------------------------------------------------ */
-
-.content--about {
-  max-width: 1100px; /* editorial page measure once fullscreen */
-  width: 100%;
-  margin-inline: auto;
+/* Music → Live: progress line that thickens into a full cover. Always black
+   with a glowing amber rim — a luminous line when thin, a clean black
+   curtain when expanded (never a muddy in-between). */
+.wipe-line {
+  position: absolute;
+  inset: 0;
+  z-index: 39;
+  background: #000;
+  box-shadow:
+    0 0 0 1px rgba(240, 160, 90, 0.9),
+    0 0 22px rgba(240, 160, 90, 0.55);
+  transform-origin: center;
+  opacity: 0;
+  pointer-events: none;
 }
 
-.about-label {
+/* Live → Contact: vertical split shutters closing over the page. */
+.split__top,
+.split__bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50.5%;
+  z-index: 39;
+  background: var(--black);
+  pointer-events: none;
+}
+
+.split__top {
+  top: 0;
+  transform-origin: center top;
+}
+
+.split__bottom {
+  bottom: 0;
+  transform-origin: center bottom;
+}
+
+/* Accent word inside shared editorial titles (About uses its own fire em). */
+.ed-title__word em {
+  font-style: italic;
+  font-weight: 300;
+  color: var(--ember);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Music player                                                        */
+/* ------------------------------------------------------------------ */
+
+.player {
+  display: flex;
+  gap: clamp(1rem, 2.5vw, 2rem);
+  align-items: center;
+  max-width: 680px;
+  padding: clamp(1rem, 2vw, 1.6rem);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: rgba(10, 10, 13, 0.7);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+}
+
+.player__art {
+  flex: none;
+  width: clamp(84px, 10vw, 128px);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--hairline);
+}
+
+.player__art--mono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display), serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.14em;
+  color: rgba(240, 160, 90, 0.55);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(240, 160, 90, 0.12), transparent 65%),
+    #0a0a0d;
+}
+
+.player__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.player__title {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.15rem, 1.8vw, 1.5rem);
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player__subtitle {
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.player__transport {
   display: flex;
   align-items: center;
   gap: 0.9rem;
 }
 
-.about-label__line {
+.player__transport button {
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--ink-dim);
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  transition: color 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .player__transport button:hover {
+    color: var(--ember);
+  }
+}
+
+.player__play {
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  border: 1px solid rgba(240, 160, 90, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(240, 160, 90, 0.08);
+  box-shadow: 0 0 24px rgba(240, 160, 90, 0.12);
+  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .player__play:hover {
+    background: rgba(240, 160, 90, 0.18);
+    box-shadow: 0 0 34px rgba(240, 160, 90, 0.22);
+    transform: scale(1.04);
+  }
+}
+
+.player__icon-play {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 8px 0 8px 13px;
+  border-color: transparent transparent transparent #f0a05a;
+  margin-left: 3px;
+}
+
+.player__icon-pause {
+  width: 12px;
+  height: 15px;
+  border-left: 4px solid #f0a05a;
+  border-right: 4px solid #f0a05a;
+}
+
+.player__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(240, 160, 90, 0.25);
+  border-top-color: #f0a05a;
+  border-radius: 50%;
+  animation: player-spin 0.8s linear infinite;
+}
+
+@keyframes player-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.player__progress,
+.player__volume {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.player__time {
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+  min-width: 2.6em;
+}
+
+.player__progress input,
+.player__volume input {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  background: var(--hairline);
+  border-radius: 2px;
+  cursor: pointer;
+  accent-color: var(--ember);
+  flex: 1;
+  padding: 12px 0; /* generous touch band */
+  background-clip: content-box;
+}
+
+.player__volume input {
+  max-width: 110px;
+}
+
+.player__progress input::-webkit-slider-thumb,
+.player__volume input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--ember);
+}
+
+.player__progress input::-moz-range-thumb,
+.player__volume input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ember);
+}
+
+.player__volume button {
+  min-width: 40px;
+  min-height: 40px;
+  color: var(--ink-dim);
+}
+
+.player__error {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: rgba(240, 160, 90, 0.85);
+}
+
+/* ——— track list ——— */
+
+.tracklist {
+  list-style: none;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+}
+
+.trackrow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 2.2rem 1fr auto;
+  align-items: baseline;
+  gap: 0.9rem;
+  padding: 0.8rem 0.3rem;
+  min-height: 48px;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  transition: padding-left 0.35s ease, border-color 0.35s ease;
+}
+
+.tracklist li:first-child .trackrow {
+  border-top: 1px solid var(--hairline);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .trackrow:hover {
+    padding-left: 0.7rem;
+    border-color: rgba(240, 160, 90, 0.4);
+  }
+}
+
+.trackrow.is-active {
+  border-color: rgba(240, 160, 90, 0.5);
+}
+
+.trackrow__index {
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+}
+
+.trackrow.is-active .trackrow__index {
+  color: var(--ember);
+}
+
+.trackrow__title {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.15rem, 1.8vw, 1.5rem);
+  color: #fff;
+}
+
+.trackrow__meta {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Live performance cards                                              */
+/* ------------------------------------------------------------------ */
+
+.livegrid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(0.9rem, 1.8vw, 1.5rem);
+  width: 100%;
+}
+
+.livecard__face {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0a0a0d;
+  transition: border-color 0.35s ease, transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.livecard__face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .livecard__face:hover {
+    border-color: rgba(240, 160, 90, 0.5);
+    transform: translateY(-4px);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  }
+
+  .livecard__face:hover img {
+    transform: scale(1.05);
+  }
+}
+
+.livecard__badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.55rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #f2eee7;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* placeholder card until a real YouTube link is pasted in */
+.livecard__face--todo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--ink-faint);
+  cursor: default;
+}
+
+.livecard__player {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(240, 160, 90, 0.4);
+}
+
+.livecard__player iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.livecard__close {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.livecard__meta {
+  padding: 0.7rem 0.2rem 0;
+}
+
+.livecard__title {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  color: #fff;
+}
+
+.livecard__sub {
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-top: 0.2rem;
+}
+
+.livecard__ext {
+  display: inline-block;
+  margin-top: 0.45rem;
+  padding: 0.4rem 0;
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  border-bottom: 1px solid var(--hairline);
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .livecard__ext:hover {
+    color: var(--ember);
+    border-color: rgba(240, 160, 90, 0.5);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  About — full-screen editorial page                                  */
+/* ------------------------------------------------------------------ */
+
+.content--about,
+.content--ed {
+  max-width: 1100px; /* editorial page measure once fullscreen */
+  width: 100%;
+  margin-inline: auto;
+}
+
+.about-label,
+.ed-label {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.about-label__line,
+.ed-label__line {
   display: block;
   width: clamp(2rem, 4vw, 3.5rem);
   height: 1px;
@@ -632,17 +1080,20 @@ a {
   transform-origin: left center;
 }
 
-.about-label__mask {
+.about-label__mask,
+.ed-label__mask {
   display: inline-block;
   overflow: hidden;
   padding: 0.15em 0;
 }
 
-.about-label__text {
+.about-label__text,
+.ed-label__text {
   display: inline-block;
 }
 
-.about-title {
+.about-title,
+.ed-title {
   font-family: var(--font-display), serif;
   font-weight: 400;
   font-size: clamp(2.4rem, 5.5vw, 5.2rem);
@@ -651,7 +1102,8 @@ a {
   max-width: 46rem; /* wraps clear of the portrait column */
 }
 
-.about-title__mask {
+.about-title__mask,
+.ed-title__mask {
   display: inline-block;
   overflow: hidden;
   vertical-align: bottom;
@@ -659,7 +1111,8 @@ a {
   margin-bottom: -0.08em;
 }
 
-.about-title__word {
+.about-title__word,
+.ed-title__word {
   display: inline-block;
   transform-origin: 50% 100%;
 }
@@ -724,7 +1177,8 @@ a {
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
 }
 
-.content--about {
+.content--about,
+.content--ed {
   position: relative; /* anchors the portrait to the text block */
 }
 
@@ -756,7 +1210,8 @@ a {
 /* Reduced motion shows About inside the normal card — keep the editorial
    title at card scale there so nothing clips. */
 @media (prefers-reduced-motion: reduce) {
-  .about-title {
+  .about-title,
+  .ed-title {
     font-size: clamp(2rem, 3.4vw, 3.4rem);
   }
 
@@ -1255,7 +1710,7 @@ a {
 @media (max-width: 840px) {
   /* Shorter runway on mobile — same story, less thumb travel. */
   .track {
-    height: 1250vh;
+    height: 1600vh;
   }
 
   /* Portrait crop prioritises her face and upper body; the wordmark sits
@@ -1283,6 +1738,24 @@ a {
   }
 
   .release__arrow {
+    display: none;
+  }
+
+  /* Live cards and the player stack vertically on phones. */
+  .livegrid {
+    grid-template-columns: 1fr;
+  }
+
+  .player {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .player__art {
+    width: 72px;
+  }
+
+  .trackrow__meta {
     display: none;
   }
 

@@ -16,6 +16,7 @@ import SectionPanel from './SectionPanel';
 import HeroContent from './sections/HeroContent';
 import AboutContent from './sections/AboutContent';
 import MusicContent from './sections/MusicContent';
+import LiveContent from './sections/LiveContent';
 import ContactContent from './sections/ContactContent';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -24,6 +25,7 @@ const CONTENT = {
   hero: HeroContent,
   about: AboutContent,
   music: MusicContent,
+  live: LiveContent,
   contact: ContactContent,
 };
 
@@ -158,6 +160,9 @@ export default function CinematicExperience() {
         const endcard = q('.endcard');
         const mask = q('.mask');
         const curtain = q('.curtain');
+        const wipeLine = q('.wipe-line');
+        const splitTop = q('.split__top');
+        const splitBottom = q('.split__bottom');
         const marquee = q('.marquee');
         let marqueeTick; // ticker callback, removed in cleanup
         const railItems = gsap.utils.toArray(q('.rail button'));
@@ -201,6 +206,8 @@ export default function CinematicExperience() {
         });
         gsap.set(veil, { autoAlpha: 0 });
         gsap.set(curtain, { xPercent: 105 }); // waits just off the right edge
+        gsap.set(wipeLine, { autoAlpha: 0, scaleX: 0, scaleY: 0.004 });
+        gsap.set([splitTop, splitBottom], { scaleY: 0 });
         gsap.set(marquee, { autoAlpha: 0 });
 
         /* Velocity marquee: an endless two-half track advanced by the GSAP
@@ -372,6 +379,113 @@ export default function CinematicExperience() {
           ease: 'power2.in',
         });
         tl.to(opening, { autoAlpha: 0, duration: 0.9, ease: 'power1.inOut' }, '-=0.15');
+
+        /* ---------------- shared fullscreen-panel system ----------------
+           Mirrors the approved About behaviour for Music / Live / Contact:
+           depth push → expansion from the panel's real position to
+           100vw × stage height → hold → masked label/title reveals →
+           staggered `.ed-item` content → interaction hold. Each section
+           supplies its own content component and its own exit transition;
+           the expansion itself stays visually identical everywhere. */
+        const edF = isMobile ? 0.62 : isTablet ? 0.8 : 1;
+        const edStageH = () => stageRef.current.offsetHeight;
+        const buildEditorialSection = (section, panel) => {
+          const sq = (sel) => q(`[data-panel="${section.id}"] ${sel}`);
+          // masked children carry the choreography; containers stay visible
+          gsap.set(sq('.reveal'), { autoAlpha: 1, y: 0 });
+          gsap.set(sq('.ed-label__line'), { scaleX: 0 });
+          gsap.set(sq('.ed-label__text'), { yPercent: 110 });
+          gsap.set(sq('.ed-title__word'), {
+            yPercent: 110,
+            rotationX: 12,
+            transformPerspective: 500,
+          });
+          gsap.set(sq('.ed-item'), {
+            y: 44,
+            autoAlpha: 0,
+            filter: `blur(${M.pushBlur}px)`,
+          });
+
+          /* depth & parallax — the card drifts and presses forward */
+          const sideX =
+            section.side === 'left' ? 0.32 : section.side === 'right' ? 0.68 : 0.5;
+          tl.to(panel, {
+            left: () => window.innerWidth * sideX,
+            scale: 1.03,
+            z: 30,
+            duration: 1 * edF,
+            ease: 'power1.inOut',
+          });
+          tl.to(
+            video,
+            {
+              xPercent: section.pan * 0.6,
+              filter: 'brightness(0.34) saturate(1.05)',
+              scale: M.dimScale + 0.02,
+              duration: 1 * edF,
+              ease: 'power1.inOut',
+            },
+            '<'
+          );
+
+          /* expansion — the same rectangle becomes the page, no jumps */
+          tl.set(panel, { willChange: 'transform, width, height' });
+          tl.to(panel, {
+            left: () => window.innerWidth / 2,
+            top: () => edStageH() / 2,
+            width: () => window.innerWidth,
+            height: () => edStageH(),
+            scale: 1,
+            z: 0,
+            borderRadius: 0,
+            borderColor: 'rgba(255, 255, 255, 0)',
+            backgroundColor: 'rgba(6, 6, 9, 0.97)',
+            boxShadow: '0 60px 160px rgba(0, 0, 0, 0.8)',
+            duration: 1.8 * edF,
+            ease: 'power2.inOut',
+          });
+          tl.to(
+            video,
+            {
+              filter: 'brightness(0.22) saturate(1)',
+              scale: M.dimScale + 0.05,
+              duration: 1.8 * edF,
+              ease: 'power2.inOut',
+            },
+            '<'
+          );
+          tl.set(panel, {
+            backdropFilter: 'none',
+            webkitBackdropFilter: 'none',
+            willChange: 'auto',
+          });
+
+          /* fullscreen hold — a calm beat before the words */
+          tl.to({}, { duration: 0.6 * edF });
+
+          /* masked typography, then the section's content blocks */
+          const at = `${section.id}-read`;
+          tl.addLabel(at);
+          tl.to(sq('.ed-label__line'), { scaleX: 1, duration: 0.5, ease: 'power3.inOut' }, at);
+          tl.to(
+            sq('.ed-label__text'),
+            { yPercent: 0, duration: 0.5, ease: 'power3.out' },
+            `${at}+=0.15`
+          );
+          tl.to(
+            sq('.ed-title__word'),
+            { yPercent: 0, rotationX: 0, duration: 0.7, stagger: 0.1, ease: 'power3.out' },
+            `${at}+=0.3`
+          );
+          tl.to(
+            sq('.ed-item'),
+            { y: 0, autoAlpha: 1, filter: 'blur(0px)', duration: 0.9, stagger: 0.4, ease: 'power2.out' },
+            `${at}+=0.9`
+          );
+
+          /* interaction hold — time to press play / pick a performance */
+          tl.to({}, { duration: 1.5 * edF });
+        };
 
         SECTIONS.forEach((section, i) => {
           const panel = q(`[data-panel="${section.id}"]`);
@@ -610,6 +724,83 @@ export default function CinematicExperience() {
             return; // Music's walk continues from here
           }
 
+          if (
+            ['music', 'live', 'contact'].includes(section.id) &&
+            !prefersReducedMotion
+          ) {
+            /* ====== MUSIC / LIVE / CONTACT — shared fullscreen system ====== */
+            buildEditorialSection(section, panel);
+
+            if (section.id === 'music') {
+              /* MUSIC → LIVE: a thin amber progress line draws across the
+                 viewport, thickens into a full black cover, then contracts
+                 back to a line and slips away — the player's progress bar
+                 becoming the transition mask. */
+              tl.set(wipeLine, { autoAlpha: 1, scaleX: 0, scaleY: 0.004 });
+              tl.to(wipeLine, { scaleX: 1, duration: 0.6, ease: 'power2.inOut' });
+              tl.to(wipeLine, { scaleY: 1, duration: 0.7, ease: 'power2.in' });
+              tl.set(panel, { autoAlpha: 0 });
+              tl.set(video, {
+                filter: 'brightness(1) saturate(1)',
+                xPercent: 0,
+                scale: 0.97,
+              });
+              tl.to(wipeLine, { scaleY: 0.004, duration: 0.7, ease: 'power2.out' });
+              tl.to(video, { scale: 1, duration: 0.7, ease: 'power2.out' }, '<');
+              tl.to(wipeLine, { scaleX: 0, autoAlpha: 0, duration: 0.5, ease: 'power2.in' });
+            } else if (section.id === 'live') {
+              /* LIVE → CONTACT: two black shutters close vertically over the
+                 page; behind them the film is restaged, then the split parts
+                 from the center. */
+              tl.to(splitTop, { scaleY: 1, duration: 0.7, ease: 'power2.in' });
+              tl.to(splitBottom, { scaleY: 1, duration: 0.7, ease: 'power2.in' }, '<');
+              tl.set(panel, { autoAlpha: 0 });
+              tl.set(video, {
+                filter: 'brightness(1) saturate(1)',
+                xPercent: 0,
+                scale: 0.97,
+              });
+              tl.to({}, { duration: 0.2 }); // a beat of black
+              tl.to(splitTop, { scaleY: 0, duration: 0.8, ease: 'power2.out' });
+              tl.to(splitBottom, { scaleY: 0, duration: 0.8, ease: 'power2.out' }, '<');
+              tl.to(video, { scale: 1, duration: 0.8, ease: 'power2.out' }, '<');
+            } else {
+              /* CONTACT → FINAL: depth push into black — the booking page
+                 presses toward the viewer while the center mask swallows the
+                 frame (hands off to the final turn film, unchanged). */
+              tl.set(panel, {
+                willChange: 'transform, filter',
+                filter: 'blur(0px) brightness(1)',
+              });
+              tl.to(panel, {
+                scale: M.pushScale,
+                z: M.pushZ,
+                filter: `blur(${M.pushBlur}px) brightness(0.35)`,
+                duration: 1.3,
+                ease: 'power2.inOut',
+              });
+              tl.to(
+                video,
+                {
+                  filter: 'brightness(0.25) saturate(1)',
+                  scale: M.exitScale,
+                  xPercent: 0,
+                  duration: 1.3,
+                  ease: 'power2.inOut',
+                },
+                '<'
+              );
+              tl.fromTo(
+                mask,
+                { autoAlpha: 0, scaleX: 0.18, scaleY: 0.1 },
+                { autoAlpha: 1, scaleX: 1, duration: 0.75, ease: 'power3.inOut' },
+                '<+=0.4'
+              );
+              tl.to(mask, { scaleY: 1, duration: 0.65, ease: 'power3.inOut' });
+            }
+            return;
+          }
+
           /* 3 — CONTENT REVEAL: editorial copy rises inside the panel. */
           tl.to(reveals, {
             autoAlpha: 1,
@@ -645,43 +836,6 @@ export default function CinematicExperience() {
               tl.to(marquee, { autoAlpha: 1, duration: 0.7, ease: 'power1.inOut' }, '<');
             }
             tl.set(panel, { scale: 1 }); // reset for refresh correctness
-          } else {
-            /* 5' — DEPTH PUSH + BLACK MASK (Booking only): instead of fading,
-               the card presses toward the viewer — scaling to 1.08, blurring,
-               going dark — while a small black bar at screen center grows
-               wide first, then tall, until it swallows the whole frame. */
-            tl.set(panel, {
-              willChange: 'transform, filter',
-              // explicit start so GSAP never interpolates brightness from 0
-              filter: 'blur(0px) brightness(1)',
-            });
-            tl.to(panel, {
-              scale: M.pushScale,
-              z: M.pushZ,
-              filter: `blur(${M.pushBlur}px) brightness(0.35)`,
-              duration: 1.3,
-              ease: 'power2.inOut',
-            });
-            tl.to(
-              video,
-              {
-                filter: 'brightness(0.25) saturate(1)',
-                scale: M.exitScale,
-                xPercent: 0,
-                duration: 1.3,
-                ease: 'power2.inOut',
-              },
-              '<'
-            );
-            // from-state is fully transparent so the scrub can rest anywhere
-            // before this tween without a stray black bar on screen
-            tl.fromTo(
-              mask,
-              { autoAlpha: 0, scaleX: 0.18, scaleY: 0.1 },
-              { autoAlpha: 1, scaleX: 1, duration: 0.75, ease: 'power3.inOut' },
-              '<+=0.4'
-            );
-            tl.to(mask, { scaleY: 1, duration: 0.65, ease: 'power3.inOut' });
           }
         });
 
@@ -884,6 +1038,13 @@ export default function CinematicExperience() {
 
         {/* Horizontal curtain for the About → Music transition. */}
         <div className="curtain" aria-hidden="true" />
+
+        {/* Progress-line wipe for Music → Live. */}
+        <div className="wipe-line" aria-hidden="true" />
+
+        {/* Vertical split shutters for Live → Contact. */}
+        <div className="split__top" aria-hidden="true" />
+        <div className="split__bottom" aria-hidden="true" />
 
         {/* Opening screen — Flona's portrait emerging from black beneath the
             wordmark; dissolves as the film begins. Opaque black in CSS so
