@@ -18,17 +18,21 @@ export default function LiveContent() {
   const triggerRef = useRef(null); // card that opened the video, for focus restore
   const closeRef = useRef(null);
 
-  const open = (id, e) => {
-    triggerRef.current = e.currentTarget;
+  const open = (id) => {
     pauseForYouTube(); // music track steps aside
     setYouTubeActive(true); // soundtrack falls silent
     setActiveId(id); // only one iframe ever exists
   };
 
   const close = () => {
+    const id = triggerRef.current;
     setYouTubeActive(false);
     setActiveId(null);
-    triggerRef.current?.focus();
+    // the original card button was unmounted while the video played —
+    // refocus its freshly rendered replacement once React has swapped back
+    requestAnimationFrame(() => {
+      document.querySelector(`[data-perf="${id}"]`)?.focus();
+    });
   };
 
   // Escape closes; focus lands on the close button while a video is open.
@@ -91,7 +95,11 @@ export default function LiveContent() {
                 <button
                   type="button"
                   className="livecard__face"
-                  onClick={(e) => open(perf.id, e)}
+                  data-perf={perf.id}
+                  onClick={() => {
+                    triggerRef.current = perf.id;
+                    open(perf.id);
+                  }}
                   aria-label={`Watch live: ${perf.title}`}
                 >
                   {/* real YouTube thumbnail — no iframe until pressed */}
