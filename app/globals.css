@@ -6,11 +6,15 @@
 :root {
   --black: #000;
   --ink: rgba(244, 240, 233, 0.92);
-  --ink-dim: rgba(244, 240, 233, 0.6);
-  --ink-faint: rgba(244, 240, 233, 0.38);
+  /* secondary text tiers: warm ivory, bright enough to read on pure black */
+  --ink-dim: rgba(244, 240, 233, 0.8);
+  --ink-faint: rgba(238, 231, 220, 0.62);
   --hairline: rgba(255, 255, 255, 0.14);
   --ember: #f0a05a; /* warm accent pulled from the fire ribbons */
   --glass: rgba(8, 8, 11, 0.55);
+  /* vertical space reserved at the bottom of the intro for the sound-entry
+     stack — the wordmark block anchors above it so they can never overlap */
+  --entry-reserve: calc(max(8vh, 3.5rem) + env(safe-area-inset-bottom, 0px));
   /* --font-display / --font-body are injected on <html> by next/font */
 }
 
@@ -520,11 +524,16 @@ a {
     );
 }
 
-/* Wordmark block sits below her face (she stands upper-center). Offset via
-   `top` (not transform) so the parallax owns the transform channel. */
+/* Wordmark block: anchored from the BOTTOM, directly above the sound-entry
+   stack (which reserves --entry-reserve + its own ~200px height). Sharing
+   the same bottom anchor makes wordmark/buttons overlap impossible at any
+   viewport height. Positioned via bottom (not transform) so the parallax
+   owns the transform channel. */
 .opening__lines {
-  position: relative;
-  top: 11vh;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--entry-reserve) + 235px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1392,8 +1401,8 @@ a {
   font-size: 0.62rem;
   letter-spacing: 0.4em;
   text-transform: uppercase;
-  color: #b9b3aa;
-  opacity: 0.85;
+  color: #d6d0c7;
+  opacity: 0.9;
 }
 
 .cue i {
@@ -1425,7 +1434,7 @@ a {
   align-items: center;
   justify-content: flex-end;
   gap: clamp(0.9rem, 2.4vh, 1.4rem);
-  padding-bottom: calc(max(12vh, 4.5rem) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: var(--entry-reserve);
   /* no backdrop — the opening photo's own shade darkens behind the buttons */
   opacity: 1;
   transition: opacity 0.7s ease;
@@ -1715,14 +1724,9 @@ a {
     height: 1600vh;
   }
 
-  /* Portrait crop prioritises her face and upper body; the wordmark sits
-     lower so it never touches her face. */
+  /* Portrait crop prioritises her face and upper body. */
   .opening__bg img {
     object-position: 47% 24%;
-  }
-
-  .opening__lines {
-    top: 13vh;
   }
 
   .rail__label {
@@ -1819,8 +1823,13 @@ a {
 /* Short landscape screens (phones on their side): shrink display type and
    panel padding so the pinned scene still breathes in ~350px of height. */
 @media (max-height: 500px) {
+  :root {
+    --entry-reserve: calc(max(4vh, 2rem) + env(safe-area-inset-bottom, 0px));
+  }
+
   .opening__lines {
-    top: 6vh;
+    /* compressed entry stack on short screens */
+    bottom: calc(var(--entry-reserve) + 190px);
   }
 
   .opening__bg img {
@@ -1828,7 +1837,6 @@ a {
   }
 
   .audio-entry {
-    padding-bottom: calc(max(6vh, 2.5rem) + env(safe-area-inset-bottom, 0px));
     gap: 0.5rem;
   }
 

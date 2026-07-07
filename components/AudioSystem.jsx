@@ -104,6 +104,8 @@ export default function AudioSystem() {
   const choose = (withSound, e) => {
     if (withSound) startWithSound();
     else declineSound();
+    // tell the stage the entry is done (it reveals the scroll cue)
+    window.dispatchEvent(new CustomEvent('flona:entered'));
     setLeaving(true); // CSS fades the overlay …
     // … while the content departs with a pulse and a gentle upward drift
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

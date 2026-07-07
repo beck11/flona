@@ -315,8 +315,7 @@ export default function CinematicExperience() {
               { yPercent: 130, autoAlpha: 0 },
               { yPercent: 0, autoAlpha: 1, duration: 0.9, ease: 'power4.out' },
               0.85
-            )
-            .fromTo(cue, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.8 }, 1.7);
+            );
         } else {
           introTl.fromTo(
             q('.opening__bg'),
@@ -365,6 +364,14 @@ export default function CinematicExperience() {
           };
           window.addEventListener('mousemove', parallaxMove, { passive: true });
         }
+
+        // The scroll cue appears only after the visitor makes their sound
+        // choice (it would collide with the entry buttons before that).
+        gsap.set(cue, { autoAlpha: 0 });
+        const onEntered = () => {
+          gsap.to(cue, { autoAlpha: 1, duration: 0.8, delay: 0.7, ease: 'power2.out' });
+        };
+        window.addEventListener('flona:entered', onEntered, { once: true });
 
         // Fade the scroll cue as soon as the journey starts.
         tl.to(cue, { autoAlpha: 0, duration: 0.4, ease: 'power1.out' }, 0.05);
@@ -946,6 +953,7 @@ export default function CinematicExperience() {
           railItems.forEach((el, i) => el.removeEventListener('click', railHandlers[i]));
           if (marqueeTick) gsap.ticker.remove(marqueeTick);
           if (parallaxMove) window.removeEventListener('mousemove', parallaxMove);
+          window.removeEventListener('flona:entered', onEntered);
         };
         }
       );
