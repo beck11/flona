@@ -466,8 +466,9 @@ a {
   opacity: 0;
 }
 
-/* Opening screen — the finale's mirror image, shown before the film begins.
-   Opaque black by default so the video never flashes pre-hydration. */
+/* Opening screen — Flona's portrait beneath the wordmark, shown before the
+   film begins. Opaque black by default so the video never flashes
+   pre-hydration; the photo is revealed by the load entrance. */
 .opening {
   position: absolute;
   inset: 0;
@@ -476,9 +477,75 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.9rem;
   pointer-events: none;
   background: var(--black);
+  overflow: hidden;
+}
+
+.opening__bg {
+  position: absolute;
+  inset: 0;
+  opacity: 0; /* the entrance timeline breathes it in from black */
+}
+
+.opening__bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* keep her face & hair in frame; tuned per orientation below */
+  object-position: 50% 28%;
+}
+
+/* Layered cinematic fade: (1) vertical wash, darker behind the type and
+   buttons and dissolving to pure black at the bottom; (2) subject window +
+   edge vignette keeping Flona slightly brighter than her surroundings. */
+.opening__shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0.28) 30%,
+      rgba(0, 0, 0, 0.52) 60%,
+      rgba(0, 0, 0, 0.85) 86%,
+      #000 100%
+    ),
+    radial-gradient(
+      ellipse 62% 64% at 49% 30%,
+      rgba(0, 0, 0, 0) 30%,
+      rgba(0, 0, 0, 0.42) 68%,
+      rgba(0, 0, 0, 0.9) 100%
+    );
+}
+
+/* Wordmark block sits below her face (she stands upper-center). */
+.opening__lines {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  transform: translateY(11vh);
+}
+
+.opening__maskline {
+  display: block;
+  overflow: hidden;
+  padding: 0.12em 0.3em;
+}
+
+/* High-contrast warm ivory over the photo (scoped to beat the shared
+   wordmark rules that come later in the file). */
+.opening .opening__mark {
+  color: #f8f5ef;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.65);
+}
+
+.opening .opening__sub {
+  color: #e8e1d6;
+  opacity: 0.8;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.6);
 }
 
 /* Velocity ribbon — ghost-outline wordmark drifting across the black
@@ -824,7 +891,7 @@ a {
   font-size: 0.62rem;
   letter-spacing: 0.26em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-dim);
   opacity: 0;
   transform: translateX(6px);
   transition: opacity 0.35s ease, transform 0.35s ease;
@@ -866,14 +933,15 @@ a {
   font-size: 0.62rem;
   letter-spacing: 0.4em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: #b9b3aa;
+  opacity: 0.85;
 }
 
 .cue i {
   display: block;
   width: 1px;
   height: 44px;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), transparent);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.7), transparent);
   animation: cue-drop 2.2s ease-in-out infinite;
   transform-origin: top;
 }
@@ -899,7 +967,7 @@ a {
   justify-content: flex-end;
   gap: clamp(0.9rem, 2.4vh, 1.4rem);
   padding-bottom: calc(max(12vh, 4.5rem) + env(safe-area-inset-bottom, 0px));
-  background: rgba(0, 0, 0, 0.6);
+  /* no backdrop — the opening photo's own shade darkens behind the buttons */
   opacity: 1;
   transition: opacity 0.7s ease;
   /* let wheel/touch scrolling pass through — only the buttons are targets */
@@ -918,8 +986,80 @@ a {
 .audio-entry__note {
   font-family: var(--font-display), serif;
   font-style: italic;
-  font-size: 1rem;
-  color: var(--ink-faint);
+  font-size: 1.05rem;
+  color: #f2eee7;
+  opacity: 0; /* revealed by the entrance timeline */
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6);
+}
+
+.audio-entry__maskline {
+  display: block;
+  overflow: hidden;
+  padding: 0.2em 0.6em;
+}
+
+/* Primary action — warm amber pill, dark type, restrained glow. */
+.audio-entry__cta {
+  display: inline-block;
+  min-height: 52px;
+  padding: 0.95rem clamp(1.75rem, 4vw, 3rem);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: #d98a3d;
+  color: #0a0a0a;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+  opacity: 0; /* revealed by the entrance timeline */
+  box-shadow:
+    0 0 0 1px rgba(255, 190, 110, 0.25),
+    0 8px 30px rgba(217, 138, 61, 0.22);
+  transition:
+    background 0.35s ease,
+    transform 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+/* soft light sweep that crosses the pill on hover */
+.audio-entry__cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 235, 205, 0.35) 50%,
+    transparent 70%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .audio-entry__cta:hover {
+    background: #f0a75a;
+    transform: scale(1.02);
+    box-shadow:
+      0 0 0 1px rgba(255, 190, 110, 0.4),
+      0 10px 36px rgba(217, 138, 61, 0.3);
+  }
+
+  .audio-entry__cta:hover::after {
+    transform: translateX(130%);
+  }
+}
+
+.audio-entry__cta:focus-visible {
+  background: #f0a75a;
+}
+
+.audio-entry__cta:active {
+  background: #c8782f;
+  transform: scale(0.98);
 }
 
 .audio-entry__actions {
@@ -933,15 +1073,36 @@ a {
   font-size: 0.68rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: #d6d0c7;
+  opacity: 0; /* revealed by the entrance timeline (to 0.75 visually via GSAP) */
   min-height: 44px;
   padding: 0.6rem 1rem; /* comfortable touch target */
+  position: relative;
   transition: color 0.3s ease;
+}
+
+/* animated underline instead of a plain color change */
+.audio-entry__silent::after {
+  content: '';
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 0.45rem;
+  height: 1px;
+  background: rgba(214, 208, 199, 0.7);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.35s ease;
 }
 
 .audio-entry__silent:hover,
 .audio-entry__silent:focus-visible {
-  color: var(--ink);
+  color: #f2eee7;
+}
+
+.audio-entry__silent:hover::after,
+.audio-entry__silent:focus-visible::after {
+  transform: scaleX(1);
 }
 
 /* Corner control: mute toggle + slider. Opposite corner from the rail. */
@@ -961,7 +1122,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--hairline);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 50%;
   background: rgba(8, 8, 11, 0.5);
   backdrop-filter: blur(10px);
@@ -1095,6 +1256,16 @@ a {
     height: 1250vh;
   }
 
+  /* Portrait crop prioritises her face and upper body; the wordmark sits
+     lower so it never touches her face. */
+  .opening__bg img {
+    object-position: 47% 24%;
+  }
+
+  .opening__lines {
+    transform: translateY(13vh);
+  }
+
   .rail__label {
     display: none;
   }
@@ -1171,6 +1342,24 @@ a {
 /* Short landscape screens (phones on their side): shrink display type and
    panel padding so the pinned scene still breathes in ~350px of height. */
 @media (max-height: 500px) {
+  .opening__lines {
+    transform: translateY(6vh);
+  }
+
+  .opening__bg img {
+    object-position: 50% 22%;
+  }
+
+  .audio-entry {
+    padding-bottom: calc(max(6vh, 2.5rem) + env(safe-area-inset-bottom, 0px));
+    gap: 0.5rem;
+  }
+
+  .audio-entry__cta {
+    min-height: 46px;
+    padding: 0.7rem clamp(1.5rem, 3vw, 2.2rem);
+  }
+
   .hero__title {
     font-size: clamp(1.8rem, 11vh, 3.4rem);
   }

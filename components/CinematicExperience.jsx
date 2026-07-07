@@ -278,6 +278,45 @@ export default function CinematicExperience() {
           },
         });
 
+        /* LOAD ENTRANCE — runs once on arrival (time-based, not scroll):
+           the portrait breathes in from black with a slow settle while the
+           wordmark rises from behind its mask. Reduced motion gets a short
+           plain crossfade instead. */
+        const introTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+        if (!prefersReducedMotion) {
+          introTl
+            .fromTo(
+              q('.opening__bg'),
+              { autoAlpha: 0 },
+              { autoAlpha: 1, duration: 1.6, ease: 'power2.out' }
+            )
+            .fromTo(
+              q('.opening__bg img'),
+              { scale: 1.06 },
+              { scale: 1, duration: 2.4, ease: 'power2.out' },
+              0
+            )
+            .fromTo(
+              q('.opening__mark'),
+              { yPercent: 112, filter: 'blur(6px)' },
+              { yPercent: 0, filter: 'blur(0px)', duration: 1.0, ease: 'power4.out' },
+              0.55
+            )
+            .fromTo(
+              q('.opening__sub'),
+              { yPercent: 130, autoAlpha: 0 },
+              { yPercent: 0, autoAlpha: 1, duration: 0.9, ease: 'power4.out' },
+              0.85
+            )
+            .fromTo(cue, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.8 }, 1.7);
+        } else {
+          introTl.fromTo(
+            q('.opening__bg'),
+            { autoAlpha: 0 },
+            { autoAlpha: 1, duration: 0.6, ease: 'none' }
+          );
+        }
+
         // Fade the scroll cue as soon as the journey starts.
         tl.to(cue, { autoAlpha: 0, duration: 0.4, ease: 'power1.out' }, 0.05);
 
@@ -803,11 +842,30 @@ export default function CinematicExperience() {
         {/* Horizontal curtain for the About → Music transition. */}
         <div className="curtain" aria-hidden="true" />
 
-        {/* Opening wordmark on black — dissolves as the film begins. Rendered
-            fully opaque in CSS so nothing flashes before the timeline builds. */}
+        {/* Opening screen — Flona's portrait emerging from black beneath the
+            wordmark; dissolves as the film begins. Opaque black in CSS so
+            nothing flashes before the timeline builds. */}
         <div className="opening">
-          <p className="opening__mark">Flona Kimia</p>
-          <p className="opening__sub">the light walks on</p>
+          <div className="opening__bg" aria-hidden="true">
+            <img
+              src="/images/flona-intro-2560.jpg"
+              srcSet="/images/flona-intro-1280.jpg 1280w, /images/flona-intro-2560.jpg 2560w"
+              sizes="100vw"
+              alt=""
+              fetchPriority="high"
+            />
+            {/* layered cinematic fade: global dim + subject window + edge
+                vignette + deeper black behind the type and buttons */}
+            <div className="opening__shade" />
+          </div>
+          <div className="opening__lines">
+            <span className="opening__maskline">
+              <p className="opening__mark">Flona Kimia</p>
+            </span>
+            <span className="opening__maskline">
+              <p className="opening__sub">the light walks on</p>
+            </span>
+          </div>
         </div>
 
         {/* Warm light bloom for her final pose. */}

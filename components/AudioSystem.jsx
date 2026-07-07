@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import gsap from 'gsap';
 import {
   subscribe,
   getAudioState,
@@ -24,6 +25,46 @@ export default function AudioSystem() {
   const [audio, setAudio] = useState(getAudioState);
   const [entered, setEntered] = useState(false); // choice made?
   const [leaving, setLeaving] = useState(false); // overlay fading out
+  const entryRef = useRef(null);
+
+  // Entrance: the note and buttons rise from behind overflow-hidden masks,
+  // timed after the opening portrait/wordmark reveal. Reduced motion just
+  // shows them. (CSS keeps them hidden pre-hydration to avoid a flash.)
+  useEffect(() => {
+    if (!entryRef.current) return undefined;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ctx = gsap.context(() => {
+      if (reduce) {
+        gsap.set('.audio-entry__note, .audio-entry__cta, .audio-entry__silent', {
+          autoAlpha: 1,
+        });
+        return;
+      }
+      gsap
+        .timeline({ defaults: { ease: 'power4.out' } })
+        .fromTo(
+          '.audio-entry__note',
+          { yPercent: 130, autoAlpha: 0 },
+          { yPercent: 0, autoAlpha: 1, duration: 0.9 },
+          1.05
+        )
+        .fromTo(
+          '.audio-entry__cta',
+          { yPercent: 140, autoAlpha: 0 },
+          { yPercent: 0, autoAlpha: 1, duration: 0.9 },
+          1.25
+        )
+        .fromTo(
+          '.audio-entry__silent',
+          { y: 10, autoAlpha: 0 },
+          { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power2.out' },
+          1.65
+        )
+        // release the masks so the button's glow isn't clipped afterwards
+        .set('.audio-entry__maskline', { overflow: 'visible' });
+    }, entryRef);
+    return () => ctx.revert();
+  }, []);
 
   useEffect(() => {
     loadPrefs();
@@ -60,22 +101,49 @@ export default function AudioSystem() {
     };
   }, []);
 
-  const choose = (withSound) => {
+  const choose = (withSound, e) => {
     if (withSound) startWithSound();
     else declineSound();
-    setLeaving(true); // CSS fades the overlay, then it unmounts
-    setTimeout(() => setEntered(true), 700);
+    setLeaving(true); // CSS fades the overlay …
+    // … while the content departs with a pulse and a gentle upward drift
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce && entryRef.current) {
+      const tl = gsap.timeline();
+      if (withSound && e?.currentTarget) {
+        tl.to(e.currentTarget, { scale: 1.05, duration: 0.16, ease: 'power2.out' }).to(
+          e.currentTarget,
+          { scale: 1, duration: 0.22, ease: 'power2.inOut' }
+        );
+      }
+      tl.to(
+        entryRef.current.children,
+        { y: -26, autoAlpha: 0, stagger: 0.07, duration: 0.5, ease: 'power2.in' },
+        withSound ? 0.15 : 0
+      );
+    }
+    setTimeout(() => setEntered(true), 800);
   };
 
   return (
     <>
       {!entered && (
-        <div className={`audio-entry${leaving ? ' audio-entry--leaving' : ''}`}>
-          <p className="audio-entry__note">This is a film. It sounds better loud.</p>
+        <div
+          ref={entryRef}
+          className={`audio-entry${leaving ? ' audio-entry--leaving' : ''}`}
+        >
+          <span className="audio-entry__maskline">
+            <p className="audio-entry__note">This is a film. It sounds better loud.</p>
+          </span>
           <div className="audio-entry__actions">
-            <button type="button" className="cta" onClick={() => choose(true)}>
-              Enter with sound
-            </button>
+            <span className="audio-entry__maskline">
+              <button
+                type="button"
+                className="audio-entry__cta"
+                onClick={(e) => choose(true, e)}
+              >
+                Enter with sound
+              </button>
+            </span>
             <button
               type="button"
               className="audio-entry__silent"
