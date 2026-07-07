@@ -244,6 +244,31 @@ export default function CinematicExperience() {
         // first dim tween from 'none' (i.e. brightness 0) and fade from black.
         gsap.set(video, { filter: 'brightness(1) saturate(1)', scale: 1, xPercent: 0 });
 
+        /* Scroll cue: hidden until the sound choice is made AND the page is
+           at the top. State-driven (not one-shot tweens racing the scrub) so
+           it can never linger into later chapters or fight the timeline.
+           Declared before the timeline because onUpdate calls it. */
+        gsap.set(cue, { autoAlpha: 0 });
+        let entered = false;
+        let cueShown = false;
+        const syncCue = (progress) => {
+          const shouldShow = entered && progress <= 0.03;
+          if (shouldShow === cueShown) return;
+          cueShown = shouldShow;
+          gsap.to(cue, {
+            autoAlpha: shouldShow ? 1 : 0,
+            duration: shouldShow ? 0.8 : 0.3,
+            delay: shouldShow ? 0.6 : 0,
+            ease: 'power2.out',
+            overwrite: true, // kills any pending reveal when scrolling starts
+          });
+        };
+        const onEntered = () => {
+          entered = true;
+          syncCue(tl.scrollTrigger.progress); // tl exists by the time a click can occur
+        };
+        window.addEventListener('flona:entered', onEntered, { once: true });
+
         /* ---------------- master scroll timeline ---------------- */
         const tl = gsap.timeline({
           defaults: { ease: 'none' },
@@ -256,6 +281,7 @@ export default function CinematicExperience() {
             anticipatePin: 1,
             invalidateOnRefresh: true,
             onUpdate: (st) => {
+              syncCue(st.progress);
               // Progress rail active state, derived from section labels.
               const t = st.progress * tl.duration();
               let active = 0;
@@ -364,17 +390,6 @@ export default function CinematicExperience() {
           };
           window.addEventListener('mousemove', parallaxMove, { passive: true });
         }
-
-        // The scroll cue appears only after the visitor makes their sound
-        // choice (it would collide with the entry buttons before that).
-        gsap.set(cue, { autoAlpha: 0 });
-        const onEntered = () => {
-          gsap.to(cue, { autoAlpha: 1, duration: 0.8, delay: 0.7, ease: 'power2.out' });
-        };
-        window.addEventListener('flona:entered', onEntered, { once: true });
-
-        // Fade the scroll cue as soon as the journey starts.
-        tl.to(cue, { autoAlpha: 0, duration: 0.4, ease: 'power1.out' }, 0.05);
 
         /* OPENING — the site greets you with the wordmark on black (mirror of
            the finale). On the first scroll the type lifts away, then the black
